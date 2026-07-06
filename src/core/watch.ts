@@ -12,7 +12,10 @@ export interface WatchTarget {
 export interface RunWatchOptions {
   interval: number
   target: WatchTarget
-  onSample?: (sample: MemorySample, count: number) => void
+  startedAt?: number
+  onSample?: (sample: MemorySample, count: number, result: WatchResult) => void | Promise<void>
+  sampleMemory?: (device: DeviceInfo, process: ProcessInfo) => Promise<MemorySample>
+  signal?: AbortSignal
 }
 
 export async function resolveWatchTarget(): Promise<WatchTarget> {
@@ -26,14 +29,16 @@ export async function resolveWatchTarget(): Promise<WatchTarget> {
 }
 
 export async function runWatch(options: RunWatchOptions): Promise<WatchResult> {
-  const startedAt = Date.now()
+  const startedAt = options.startedAt || Date.now()
   const samples: MemorySample[] = []
-  let interrupted = false
+  const sampleMemory = options.sampleMemory || sampleAndroidMemory
+  let interrupted = options.signal?.aborted || false
 
   const handleInterrupt = () => {
     interrupted = true
   }
 
+  options.signal?.addEventListener('abort', handleInterrupt)
   process.once('SIGINT', handleInterrupt)
 
   try {
@@ -41,30 +46,56 @@ export async function runWatch(options: RunWatchOptions): Promise<WatchResult> {
       if (interrupted)
         break
 
-      const sample = await sampleAndroidMemory(options.target.device, options.target.process)
+      let sample: MemorySample
+
+      try {
+        sample = await sampleMemory(options.target.device, options.target.process)
+      }
+      catch (error) {
+        if (interrupted)
+          break
+
+        throw error
+      }
+
       samples.push(sample)
-      options.onSample?.(sample, samples.length)
+      await options.onSample?.(
+        sample,
+        samples.length,
+        createWatchResult(options.target, options.interval, startedAt, Date.now(), samples),
+      )
 
       await waitForNextSample(options.interval, () => interrupted)
     }
   }
   finally {
+    options.signal?.removeEventListener('abort', handleInterrupt)
     process.off('SIGINT', handleInterrupt)
   }
 
   const endedAt = Date.now()
 
+  return createWatchResult(options.target, options.interval, startedAt, endedAt, samples)
+}
+
+function createWatchResult(
+  target: WatchTarget,
+  interval: number,
+  startedAt: number,
+  endedAt: number,
+  samples: MemorySample[],
+): WatchResult {
   return {
-    platform: options.target.result.platform,
-    source: options.target.result.source,
-    interval: options.interval,
-    device: options.target.device,
-    process: options.target.process,
+    platform: target.result.platform,
+    source: target.result.source,
+    interval,
+    device: target.device,
+    process: target.process,
     startedAt,
     endedAt,
     sampleCount: samples.length,
     summary: summarizeSamples(samples),
-    samples,
+    samples: [...samples],
   }
 }
 

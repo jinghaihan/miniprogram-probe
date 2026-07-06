@@ -22,23 +22,26 @@ export async function runWatchCommand(options: Partial<CommandOptions>): Promise
 
   try {
     const target = await resolveWatchTarget()
+    const startedAt = Date.now()
+    const outputPath = resolveWatchOutputPath(options.output, startedAt, options.cwd)
 
     spinner = p.spinner()
+    p.note(c.green(outputPath), 'Output')
     spinner.start(`Watching ${c.cyan(target.process.name)}. Press ${c.yellow('Ctrl-C')} to stop.`)
 
     const result = await runWatch({
       interval,
+      startedAt,
       target,
-      onSample(sample, count) {
+      async onSample(sample, count, currentResult) {
+        await writeWatchResult(outputPath, currentResult)
         spinner?.message(`Collected ${c.cyan(String(count))} sample${count === 1 ? '' : 's'}. Press ${c.yellow('Ctrl-C')} to stop.`)
         p.note(formatSampleNote(target, sample, count, interval), `Sample ${c.cyan(String(count))}`)
       },
     })
 
     spinner.stop(`Stopped after ${c.cyan(String(result.sampleCount))} sample${result.sampleCount === 1 ? '' : 's'}.`)
-    const outputPath = resolveWatchOutputPath(options.output, result.startedAt, options.cwd)
     await writeWatchResult(outputPath, result)
-    p.note(c.green(outputPath), 'Output')
     p.outro(c.green('Watch finished.'))
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
 

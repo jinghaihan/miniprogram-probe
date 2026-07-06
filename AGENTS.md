@@ -120,6 +120,7 @@ This keeps the CLI usable both interactively and in scripts.
 ## Testing
 
 - Add focused tests for parsing, config resolution, command construction, and memory sample normalization.
+- Keep tests portable across Linux, macOS, and Windows. Avoid hardcoded path separators, POSIX-only roots, or drive-letter assumptions; use Node path helpers or `pathe` when asserting paths.
 - Avoid tests that require a real device unless they are explicitly marked as integration tests.
 - Mock process execution around ADB, Xcode, or Instruments calls.
 
