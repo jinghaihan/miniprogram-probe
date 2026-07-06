@@ -11,7 +11,7 @@ export type DevicePlatform = 'ios' | 'android'
 
 export type DeviceSource = 'xctrace' | 'adb'
 
-export type DeviceStatus = 'available' | 'unavailable' | 'unknown'
+export type DeviceStatus = 'available' | 'unavailable' | 'unauthorized' | 'unknown'
 
 export interface DeviceInfo {
   id: string

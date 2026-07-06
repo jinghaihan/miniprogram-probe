@@ -1,6 +1,7 @@
 import type { AndroidProcess, DeviceInfo, ProcessInfo } from '../types'
 import { WECHAT_ANDROID_APPBRAND_PREFIX, WECHAT_ANDROID_PACKAGE } from '../constants'
 import { runCommand } from '../utils'
+import { resolveAdbCommand } from './adb'
 
 export async function findAndroidWechatProcess(device: DeviceInfo): Promise<ProcessInfo | null> {
   const processes = await listAndroidProcesses(device)
@@ -39,12 +40,13 @@ export function parseAndroidProcesses(stdout: string): AndroidProcess[] {
 }
 
 async function listAndroidProcesses(device: DeviceInfo): Promise<AndroidProcess[]> {
-  const result = await runCommand('adb', ['-s', device.id, 'shell', 'ps', '-A'])
+  const adb = resolveAdbCommand()
+  const result = await runCommand(adb, ['-s', device.id, 'shell', 'ps', '-A'])
 
   if (result.ok)
     return parseAndroidProcesses(result.stdout)
 
-  const fallback = await runCommand('adb', ['-s', device.id, 'shell', 'ps'])
+  const fallback = await runCommand(adb, ['-s', device.id, 'shell', 'ps'])
 
   return fallback.ok ? parseAndroidProcesses(fallback.stdout) : []
 }

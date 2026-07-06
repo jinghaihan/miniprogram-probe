@@ -24,9 +24,10 @@ export async function resolveWatchTarget(): Promise<WatchTarget> {
 
   if (preferred.result.platform === 'ios') {
     const android = await listAndroidDevices()
+    const androidDevice = android.devices.find(device => device.status === 'available')
 
-    if (android.devices[0])
-      return resolveAndroidWatchTarget(android, android.devices[0])
+    if (androidDevice)
+      return resolveAndroidWatchTarget(android, androidDevice)
 
     throw new Error('iOS watch is not available in this first version. Use an Android device for watch.')
   }

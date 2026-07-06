@@ -1,5 +1,6 @@
 import type { DeviceInfo, MemorySample, MemorySnapshot, ProcessInfo } from '../types'
 import { kilobytesToBytes, runCommand } from '../utils'
+import { resolveAdbCommand } from './adb'
 
 const MEMINFO_LABELS = [
   'Native Heap',
@@ -20,7 +21,7 @@ const MEMINFO_LABELS = [
 ] as const
 
 export async function sampleAndroidMemory(device: DeviceInfo, process: ProcessInfo): Promise<MemorySample> {
-  const result = await runCommand('adb', ['-s', device.id, 'shell', 'dumpsys', 'meminfo', String(process.pid)])
+  const result = await runCommand(resolveAdbCommand(), ['-s', device.id, 'shell', 'dumpsys', 'meminfo', String(process.pid)])
 
   if (!result.ok)
     throw new Error(result.stderr || result.error || 'Failed to read Android memory.')

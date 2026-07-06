@@ -13,14 +13,16 @@ export async function listAvailableDevices(): Promise<DeviceResult[]> {
 
 export async function findPreferredDevice(): Promise<{ result: DeviceResult, device: DeviceInfo } | null> {
   const ios = await listIOSDevices()
+  const iosDevice = ios.devices.find(device => device.status === 'available')
 
-  if (ios.devices[0])
-    return { result: ios, device: ios.devices[0] }
+  if (iosDevice)
+    return { result: ios, device: iosDevice }
 
   const android = await listAndroidDevices()
+  const androidDevice = android.devices.find(device => device.status === 'available')
 
-  if (android.devices[0])
-    return { result: android, device: android.devices[0] }
+  if (androidDevice)
+    return { result: android, device: androidDevice }
 
   return null
 }

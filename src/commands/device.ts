@@ -1,4 +1,4 @@
-import type { DeviceResult } from '../types'
+import type { DeviceInfo, DeviceResult } from '../types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { listAvailableDevices } from '../core'
@@ -27,7 +27,18 @@ function formatDeviceResult(result: DeviceResult): string {
       `${c.dim('ID:')} ${c.cyan(device.id)}`,
       `${c.dim('Platform:')} ${c.cyan(device.platform)}`,
       `${c.dim('Source:')} ${c.magenta(result.source)}`,
-      `${c.dim('Status:')} ${c.green(device.status)}`,
+      `${c.dim('Status:')} ${formatDeviceStatus(device.status)}`,
     ].join('\n'))
     .join('\n\n')
+}
+
+function formatDeviceStatus(status: DeviceInfo['status']): string {
+  switch (status) {
+    case 'available':
+      return c.green(status)
+    case 'unauthorized':
+      return c.red(status)
+    default:
+      return c.yellow(status)
+  }
 }
