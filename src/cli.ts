@@ -4,21 +4,35 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
-import { resolveConfig } from './config'
-import { NAME, VERSION } from './constants'
+import { runDeviceCommand } from './commands/device'
+import { runWatchCommand } from './commands/watch'
+import { DEFAULT_WATCH_INTERVAL_MS, NAME, RANGE_MODE, VERSION } from './constants'
 
 try {
   const cli: CAC = cac(NAME)
 
   cli
-    .command('', 'Command description')
-    .allowUnknownOptions()
-    .action(async (options: Partial<CommandOptions>) => {
+    .command('[mode]', '')
+    .option('--interval <ms>', 'Sample interval in milliseconds', {
+      default: String(DEFAULT_WATCH_INTERVAL_MS),
+    })
+    .action(async (mode: string | undefined, options: Partial<CommandOptions>) => {
       p.intro(`${c.yellow`${NAME} `}${c.dim`v${VERSION}`}`)
 
-      const config = await resolveConfig(options)
+      switch (mode) {
+        case 'device':
+          process.exitCode = await runDeviceCommand()
+          return
 
-      console.log(config)
+        case 'watch':
+          process.exitCode = await runWatchCommand(options)
+          return
+
+        default:
+          p.note(`Supported modes: ${RANGE_MODE.join(', ')}`, 'Mode')
+          p.outro('Command failed.')
+          process.exitCode = 1
+      }
     })
 
   cli.help()
