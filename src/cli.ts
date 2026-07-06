@@ -16,6 +16,7 @@ try {
     .option('--interval <ms>', 'Sample interval in milliseconds', {
       default: String(DEFAULT_WATCH_INTERVAL_MS),
     })
+    .option('--output <file>', 'Write watch result JSON to a file')
     .action(async (mode: string | undefined, options: Partial<CommandOptions>) => {
       p.intro(`${c.yellow`${NAME} `}${c.dim`v${VERSION}`}`)
 

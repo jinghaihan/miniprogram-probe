@@ -1,6 +1,7 @@
 export interface CommandOptions {
   cwd?: string
   interval?: number | string
+  output?: string
 }
 
 export interface ConfigOptions extends CommandOptions {}

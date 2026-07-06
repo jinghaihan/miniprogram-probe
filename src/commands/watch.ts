@@ -1,9 +1,11 @@
 import type { WatchTarget } from '../core'
-import type { CommandOptions, MemorySample } from '../types'
+import type { CommandOptions, MemorySample, WatchResult } from '../types'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { DEFAULT_WATCH_INTERVAL_MS } from '../constants'
+import { DEFAULT_OUTPUT_DIR, DEFAULT_WATCH_INTERVAL_MS, WATCH_OUTPUT_FILENAME_PREFIX } from '../constants'
 import { resolveWatchTarget, runWatch } from '../core'
 import { formatBytes } from '../utils'
 
@@ -34,6 +36,9 @@ export async function runWatchCommand(options: Partial<CommandOptions>): Promise
     })
 
     spinner.stop(`Stopped after ${c.cyan(String(result.sampleCount))} sample${result.sampleCount === 1 ? '' : 's'}.`)
+    const outputPath = resolveWatchOutputPath(options.output, result.startedAt, options.cwd)
+    await writeWatchResult(outputPath, result)
+    p.note(c.green(outputPath), 'Output')
     p.outro(c.green('Watch finished.'))
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
 
@@ -53,6 +58,13 @@ export async function runWatchCommand(options: Partial<CommandOptions>): Promise
   }
 }
 
+export function resolveWatchOutputPath(output: string | undefined, timestamp: number, cwd = process.cwd()): string {
+  if (output)
+    return resolve(cwd, output)
+
+  return resolve(cwd, DEFAULT_OUTPUT_DIR, `${WATCH_OUTPUT_FILENAME_PREFIX}-${formatOutputTimestamp(timestamp)}.json`)
+}
+
 function parseInterval(value: CommandOptions['interval']): number | null {
   if (value === undefined)
     return DEFAULT_WATCH_INTERVAL_MS
@@ -60,6 +72,26 @@ function parseInterval(value: CommandOptions['interval']): number | null {
   const parsed = Number(value)
 
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+async function writeWatchResult(outputPath: string, result: WatchResult): Promise<void> {
+  await mkdir(dirname(outputPath), { recursive: true })
+  await writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`, 'utf8')
+}
+
+function formatOutputTimestamp(timestamp: number): string {
+  const date = new Date(timestamp)
+  const pad = (value: number) => String(value).padStart(2, '0')
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    '-',
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join('')
 }
 
 function formatSampleNote(target: WatchTarget, sample: MemorySample, count: number, interval: number): string {

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { parseAndroidAppbrandActivityProcess, parseAndroidProcesses, selectAndroidWechatProcess } from '../src/android/processes'
+import { resolveWatchOutputPath } from '../src/commands/watch'
+
+describe('watch command', () => {
+  it('defaults JSON output to the outputs directory under cwd', () => {
+    expect(resolveWatchOutputPath(undefined, new Date(2026, 6, 6, 9, 30, 5).getTime(), '/repo')).toBe('/repo/outputs/miniprogram-probe-watch-20260706-093005.json')
+  })
+
+  it('resolves explicit JSON output from cwd', () => {
+    expect(resolveWatchOutputPath('reports/watch.json', Date.UTC(2026, 6, 6), '/repo')).toBe('/repo/reports/watch.json')
+  })
+})
 
 describe('android processes', () => {
   const processes = [
