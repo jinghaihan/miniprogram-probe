@@ -46,6 +46,7 @@
     "ansis": "catalog:prod",
     "cac": "catalog:prod",
     "pathe": "catalog:prod",
+    "tinyexec": "catalog:prod",
     "unconfig": "catalog:prod"
   },
   "devDependencies": {
