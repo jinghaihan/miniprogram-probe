@@ -20,3 +20,5 @@ export const ADB_RELATIVE_PATH = 'platform-tools/adb'
 export const WECHAT_ANDROID_PACKAGE = 'com.tencent.mm'
 
 export const WECHAT_ANDROID_APPBRAND_PREFIX = 'com.tencent.mm:appbrand'
+
+export const WECHAT_ANDROID_APPBRAND_UI = 'plugin.appbrand.ui.AppBrandUI'
