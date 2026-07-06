@@ -7,8 +7,8 @@ export async function runDeviceCommand(): Promise<number> {
   const results = await listAvailableDevices()
 
   if (!results.length) {
-    p.note(c.yellow('No available iOS or Android device found.'), 'Device')
-    p.outro(c.yellow('No device found.'))
+    p.note(c.red('No available iOS or Android device found.'), 'Device')
+    p.outro(c.red('No device found.'))
     return 1
   }
 

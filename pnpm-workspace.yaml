@@ -1,4 +1,7 @@
 packages: []
+allowBuilds:
+  esbuild: true
+  simple-git-hooks: true
 catalogs:
   build:
     tsdown: ^0.21.10
