@@ -2,7 +2,6 @@ import type { DeviceInfo, DeviceResult, MemorySample, ProcessInfo, WatchResult, 
 import process from 'node:process'
 import { findAndroidWechatProcess, listAndroidDevices, sampleAndroidMemory } from '../android'
 import { sleep } from '../utils'
-import { findPreferredDevice } from './devices'
 
 export interface WatchTarget {
   result: DeviceResult
@@ -17,22 +16,13 @@ export interface RunWatchOptions {
 }
 
 export async function resolveWatchTarget(): Promise<WatchTarget> {
-  const preferred = await findPreferredDevice()
+  const android = await listAndroidDevices()
+  const androidDevice = findAvailableAndroidDevice(android)
 
-  if (!preferred)
-    throw new Error('No iOS or Android device found.')
+  if (!androidDevice)
+    throw new Error(formatAndroidWatchDeviceError(android))
 
-  if (preferred.result.platform === 'ios') {
-    const android = await listAndroidDevices()
-    const androidDevice = android.devices.find(device => device.status === 'available')
-
-    if (androidDevice)
-      return resolveAndroidWatchTarget(android, androidDevice)
-
-    throw new Error('iOS watch is not available in this first version. Use an Android device for watch.')
-  }
-
-  return resolveAndroidWatchTarget(preferred.result, preferred.device)
+  return resolveAndroidWatchTarget(android, androidDevice)
 }
 
 export async function runWatch(options: RunWatchOptions): Promise<WatchResult> {
@@ -96,6 +86,37 @@ export function summarizeSamples(samples: MemorySample[]): WatchSummary {
     minTotal: Math.min(...totals),
     lastTotal: totals.at(-1) || null,
   }
+}
+
+export function findAvailableAndroidDevice(result: DeviceResult): DeviceInfo | null {
+  return result.devices.find(device => device.status === 'available') || null
+}
+
+export function formatAndroidWatchDeviceError(result: DeviceResult): string {
+  if (!result.devices.length)
+    return 'No Android device found. Watch currently requires an available Android device.'
+
+  const devices = result.devices
+    .map(device => `${formatDeviceLabel(device)} is ${device.status}`)
+    .join('\n')
+
+  if (result.devices.some(device => device.status === 'unauthorized')) {
+    return [
+      'Android device is unauthorized.',
+      devices,
+      'Unlock the device, confirm the USB debugging prompt, then run adb devices until it shows "device".',
+    ].join('\n')
+  }
+
+  return [
+    'No available Android device found.',
+    devices,
+    'Reconnect the device or check adb devices before running watch again.',
+  ].join('\n')
+}
+
+function formatDeviceLabel(device: DeviceInfo): string {
+  return device.name === device.id ? device.id : `${device.name} (${device.id})`
 }
 
 async function resolveAndroidWatchTarget(result: DeviceResult, device: DeviceInfo): Promise<WatchTarget> {
